@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}分析结果 - 图片分析系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>分析结果 - {{ task.filename }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 进度显示 -->
+                <div id="progressSection" class="mb-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-3">分析状态:</strong>
+                        <span id="statusBadge" class="badge bg-info">{{ task.status }}</span>
+                    </div>
+                    <div class="progress mb-2">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%">
+                            <span id="progressText">0/0</span>
+                        </div>
+                    </div>
+                    <div id="statusText" class="text-muted small">
+                        {{ task.get('progress', '准备开始分析...') }}
+                    </div>
+                </div>
+
+                <!-- Excel下载区域 -->
+                <div class="card mb-4" id="downloadCard" style="display: none;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-excel text-success me-2"></i>分析完成
+                        </h5>
+                        <p class="card-text">所有图片分析完成，结果已保存为Excel文件</p>
+                        <a href="#" class="btn btn-success btn-lg" id="downloadBtn">
+                            <i class="fas fa-download me-2"></i>下载Excel文件
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 分析结果 -->
+                <div id="resultsSection" style="display: none;">
+                    <h5 class="mb-3">
+                        <i class="fas fa-brain me-2"></i>AI分析结果
+                        <span class="badge bg-primary ms-2" id="resultCount">0</span>
+                    </h5>
+                    <div id="resultsContainer">
+                        <!-- 结果将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 错误信息 -->
+                <div id="errorSection" style="display: none;" class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>分析失败</h5>
+                    <p id="errorMessage"></p>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>分析新图片
+                    </a>
+                    <button id="refreshBtn" class="btn btn-outline-secondary" onclick="checkStatus()">
+                        <i class="fas fa-sync-alt me-2"></i>刷新状态
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let taskId = '{{ task_id }}';
+let checkInterval;
+
+function updateProgressBar(progress, total) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    if (total > 0) {
+        const percentage = Math.round((progress / total) * 100);
+        progressBar.style.width = percentage + '%';
+        progressText.textContent = `${progress}/${total}`;
+        
+        // 更新状态文本
+        const statusText = document.getElementById('statusText');
+        if (progress === total) {
+            statusText.textContent = '分析完成，正在生成Excel文件...';
+        } else {
+            statusText.textContent = `正在分析第 ${progress + 1} 张图片，共 ${total} 张...`;
+        }
+    }
+}
+
+function updateProgressBarByStatus(status) {
+    const progressBar = document.getElementById('progressBar');
+    const statusBadge = document.getElementById('statusBadge');
+    
+    switch(status) {
+        case 'pending':
+            progressBar.style.width = '10%';
+            statusBadge.className = 'badge bg-info';
+            statusBadge.textContent = '等待中';
+            break;
+        case 'analyzing':
+            progressBar.style.width = '50%';
+            statusBadge.className = 'badge bg-warning';
+            statusBadge.textContent = '分析中';
+            break;
+        case 'completed':
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+            statusBadge.className = 'badge bg-success';
+            statusBadge.textContent = '完成';
+            break;
+        case 'error':
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-danger';
+            statusBadge.className = 'badge bg-danger';
+            statusBadge.textContent = '失败';
+            break;
+    }
+}
+
+function displayResults(results) {
+    const container = document.getElementById('resultsContainer');
+    const resultCount = document.getElementById('resultCount');
+    container.innerHTML = '';
+    
+    if (results && results.length > 0) {
+        resultCount.textContent = results.length;
+        
+        results.forEach((result, index) => {
+            const resultCard = document.createElement('div');
+            resultCard.className = 'card mb-3';
+            resultCard.innerHTML = `
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-image me-2"></i>${result.original_filename || result.filename || `图片 ${index + 1}`}
+                        <small class="text-muted ms-2">(${result.model_name || result.model || 'AI模型'})</small>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-language me-2"></i>中文分析结果
+                            </h6>
+                            <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                                <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">${result.chinese_result || result.analysis || '暂无分析结果'}</pre>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-globe me-2"></i>English Translation
+                            </h6>
+                            <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                                <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">${result.english_result || result.english_analysis || 'No English analysis available'}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(resultCard);
+        });
+    }
+    
+    document.getElementById('resultsSection').style.display = 'block';
+}
+
+function checkStatus() {
+    fetch(`/api/status/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            const statusBadge = document.getElementById('statusBadge');
+            const downloadCard = document.getElementById('downloadCard');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            if (data.status === 'completed' && data.results) {
+                updateProgressBarByStatus(data.status);
+                
+                // 显示下载按钮
+                if (data.excel_file) {
+                    downloadCard.style.display = 'block';
+                    downloadBtn.href = `/download/${taskId}`;
+                }
+                
+                displayResults(data.results);
+                clearInterval(checkInterval);
+                document.getElementById('progressSection').style.display = 'none';
+                
+            } else if (data.status === 'error') {
+                updateProgressBarByStatus(data.status);
+                document.getElementById('errorMessage').textContent = data.error || '未知错误';
+                document.getElementById('errorSection').style.display = 'block';
+                document.getElementById('progressSection').style.display = 'none';
+                clearInterval(checkInterval);
+                
+            } else if (data.status === 'processing') {
+                updateProgressBar(data.progress || 0, data.total || 1);
+                displayResults(data.results || []);
+                
+            } else {
+                updateProgressBarByStatus(data.status);
+                document.getElementById('statusText').textContent = data.progress || '';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+            document.getElementById('errorMessage').textContent = '无法获取分析状态';
+            document.getElementById('errorSection').style.display = 'block';
+        });
+}
+
+// 页面加载时开始检查状态
+document.addEventListener('DOMContentLoaded', function() {
+    // 立即检查一次状态
+    checkStatus();
+    
+    // 每2秒检查一次状态
+    checkInterval = setInterval(checkStatus, 2000);
+    
+    // 页面卸载时清除定时器
+    window.addEventListener('beforeunload', function() {
+        if (checkInterval) {
+            clearInterval(checkInterval);
+        }
+    });
+});
+</script>
+{% endblock %}

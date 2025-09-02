@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}图片上传 - 图片分析系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>上传图片进行分析
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" id="uploadForm">
+                    <div class="mb-3">
+                        <label for="files" class="form-label">
+                            <i class="fas fa-images me-2"></i>选择图片文件（支持多选）
+                        </label>
+                        <input type="file" class="form-control" id="files" name="files" 
+                               accept=".png,.jpg,.jpeg,.gif,.bmp,.tiff" multiple required>
+                        <div class="form-text">
+                            支持格式: PNG, JPG, JPEG, GIF, BMP, TIFF (每个文件最大16MB，最多同时上传10张)
+                        </div>
+                        <div id="filePreview" class="mt-2" style="display: none;">
+                            <small class="text-muted">已选择的文件：</small>
+                            <div id="fileList" class="mt-1"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="prompt" class="form-label">
+                            <i class="fas fa-comment-dots me-2"></i>分析提示词
+                        </label>
+                        <textarea class="form-control" id="prompt" name="prompt" rows="3" 
+                                  placeholder="请输入您希望AI如何分析这张图片...">
+你是一个专业的图像分析专家。我给你的是商品主图，请忽略掉主图中的商品、贴片等元素，仅仅考虑背景，请详细描述图片背景的内容，不需要进行其他维度的解释。</textarea>
+                        <div class="form-text">
+                            可以自定义分析角度和要求
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-magic me-2"></i>开始分析
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>系统说明
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-robot me-2"></i>支持的AI模型</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>GPT-4o-0806</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Claude Sonnet 4</li>
+                            <li><i class="fas fa-check text-success me-2"></i>GPT-4.1</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Doubao-1.5-vision-pro</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-language me-2"></i>功能特点</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>多模型并行分析</li>
+                            <li><i class="fas fa-check text-success me-2"></i>中英文双语结果</li>
+                            <li><i class="fas fa-check text-success me-2"></i>实时进度显示</li>
+                            <li><i class="fas fa-check text-success me-2"></i>局域网访问支持</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const fileInput = document.getElementById('files');
+    
+    if (!fileInput.files.length) {
+        e.preventDefault();
+        alert('请选择至少一个图片文件');
+        return;
+    }
+    
+    // 检查文件数量
+    if (fileInput.files.length > 10) {
+        e.preventDefault();
+        alert('最多只能同时上传10张图片');
+        return;
+    }
+    
+    // 检查每个文件的大小
+    for (let i = 0; i < fileInput.files.length; i++) {
+        const file = fileInput.files[i];
+        if (file.size > 16 * 1024 * 1024) {
+            e.preventDefault();
+            alert(`文件 "${file.name}" 太大，请选择小于16MB的文件`);
+            return;
+        }
+    }
+    
+    // 显示加载状态
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>批量上传中...';
+    submitBtn.disabled = true;
+});
+
+// 文件选择预览
+document.getElementById('files').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const filePreview = document.getElementById('filePreview');
+    const fileList = document.getElementById('fileList');
+    
+    if (files.length > 0) {
+        filePreview.style.display = 'block';
+        fileList.innerHTML = '';
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileItem = document.createElement('div');
+            fileItem.className = 'badge bg-secondary me-2 mb-1';
+            fileItem.innerHTML = `<i class="fas fa-image me-1"></i>${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+            fileList.appendChild(fileItem);
+        }
+        
+        // 显示文件数量提示
+        if (files.length > 10) {
+            const warning = document.createElement('div');
+            warning.className = 'alert alert-warning mt-2';
+            warning.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>最多只能同时上传10张图片，请重新选择。';
+            fileList.appendChild(warning);
+        }
+    } else {
+        filePreview.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
