@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
       
-      const filename = `${timestamp}_${i + 1:02d}_${file.name}`
+      const filename = `${timestamp}_${String(i + 1).padStart(2, '0')}_${file.name}`
       const filepath = path.join(uploadDir, filename)
       
       await writeFile(filepath, buffer)
