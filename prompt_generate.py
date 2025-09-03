@@ -23,7 +23,7 @@ os.environ["OPENAI_API_KEY"] = "35f54cc4-be7a-4414-808e-f5f9f0194d4f"
 os.environ["OPENAI_API_BASE"] = "http://gpt-proxy.jd.com/v1"
 
 # 默认分析提示词
-# DEFAULT_PROMPT = "请分析这张图片的设计特点、视觉效果和用户体验要素。"
+DEFAULT_PROMPT = "请分析这张图片的设计特点、视觉效果和用户体验要素。"
 
 # 默认使用的模型列表
 DEFAULT_MODELS = [
@@ -170,7 +170,7 @@ def analyze_single_image(image_path, prompt=None, models=None):
                     messages=[
                         {
                             "role": "system",
-                            "content": "你是一个专业的图像分析专家。我给你的是商品主图，请忽略掉主图中的商品、贴片等元素，仅仅考虑背景，请详细描述图片背景的内容，不需要进行其他维度的解释。"
+                            "content": prompt if prompt else DEFAULT_PROMPT
                         },
                         {
                             "role": "user",

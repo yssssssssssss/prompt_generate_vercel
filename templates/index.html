@@ -40,6 +40,60 @@
                         </div>
                     </div>
                     
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-robot me-2"></i>选择分析模型
+                        </label>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll" checked>
+                                    <label class="form-check-label fw-bold" for="selectAll">
+                                        全选/取消全选
+                                    </label>
+                                </div>
+                                <hr class="my-2">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" name="models" value="gpt-4o-0806" id="model1" checked>
+                                    <label class="form-check-label" for="model1">
+                                        GPT-4o-0806
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" name="models" value="gpt-4.1" id="model2" checked>
+                                    <label class="form-check-label" for="model2">
+                                        GPT-4.1
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" name="models" value="Doubao-1.5-vision-pro-32k" id="model3" checked>
+                                    <label class="form-check-label" for="model3">
+                                        Doubao-1.5-vision-pro-32k
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" name="models" value="anthropic.claude-sonnet-4-20250514-v1:0" id="model4" checked>
+                                    <label class="form-check-label" for="model4">
+                                        Claude Sonnet 4
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" name="models" value="claude-3-7-sonnet-v1" id="model5" checked>
+                                    <label class="form-check-label" for="model5">
+                                        Claude 3.7 Sonnet
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            默认使用所有模型，您可以取消勾选不需要的模型
+                        </div>
+                    </div>
+                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                             <i class="fas fa-magic me-2"></i>开始分析
@@ -84,6 +138,35 @@
 
 {% block scripts %}
 <script>
+// 全选/取消全选功能
+document.getElementById('selectAll').addEventListener('change', function(e) {
+    const modelCheckboxes = document.querySelectorAll('.model-checkbox');
+    modelCheckboxes.forEach(checkbox => {
+        checkbox.checked = e.target.checked;
+    });
+});
+
+// 监听单个模型复选框变化
+document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const allCheckboxes = document.querySelectorAll('.model-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.model-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        
+        // 更新全选复选框状态
+        if (checkedCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedCheckboxes.length === allCheckboxes.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
+    });
+});
+
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
     const submitBtn = document.getElementById('submitBtn');
     const fileInput = document.getElementById('files');
@@ -91,6 +174,14 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     if (!fileInput.files.length) {
         e.preventDefault();
         alert('请选择至少一个图片文件');
+        return;
+    }
+    
+    // 检查是否选择了至少一个模型
+    const selectedModels = document.querySelectorAll('.model-checkbox:checked');
+    if (selectedModels.length === 0) {
+        e.preventDefault();
+        alert('请至少选择一个分析模型');
         return;
     }
     

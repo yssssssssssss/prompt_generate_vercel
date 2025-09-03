@@ -55,7 +55,7 @@ def cleanup_old_files():
     except Exception as e:
         print(f"清理文件时出错: {str(e)}")
 
-def analyze_images_async(files_info, task_id, custom_prompt):
+def analyze_images_async(files_info, task_id, custom_prompt, selected_models=None):
     """异步分析多张图片并生成Excel"""
     try:
         # 更新状态为处理中
@@ -72,7 +72,9 @@ def analyze_images_async(files_info, task_id, custom_prompt):
                 # analyze_single_image返回的是model_analysis_pairs列表
                 # 如果没有自定义提示词，使用默认提示词
                 prompt_to_use = custom_prompt if custom_prompt else DEFAULT_PROMPT
-                model_analysis_pairs = analyze_single_image(file_info['filepath'], prompt_to_use)
+                # 如果没有指定模型，使用默认的所有模型
+                models_to_use = selected_models if selected_models else DEFAULT_MODELS
+                model_analysis_pairs = analyze_single_image(file_info['filepath'], prompt_to_use, models_to_use)
                 
                 if model_analysis_pairs and len(model_analysis_pairs) > 0:
                     # 保留所有模型的分析结果
@@ -203,7 +205,13 @@ def upload_file():
             })
         
         # 获取自定义提示词
-        custom_prompt = request.form.get('custom_prompt', '').strip()
+        custom_prompt = request.form.get('prompt', '').strip()
+        
+        # 获取用户选择的模型列表
+        selected_models = request.form.getlist('models')
+        if not selected_models:
+            # 如果没有选择任何模型，使用默认的所有模型
+            selected_models = DEFAULT_MODELS
         
         # 生成任务ID
         task_id = str(uuid.uuid4())
@@ -217,13 +225,14 @@ def upload_file():
             'error': None,
             'start_time': datetime.now(),
             'files': saved_files,
-            'excel_file': None
+            'excel_file': None,
+            'selected_models': selected_models
         }
         
         # 启动异步分析任务
         thread = threading.Thread(
             target=analyze_images_async, 
-            args=(saved_files, task_id, custom_prompt)
+            args=(saved_files, task_id, custom_prompt, selected_models)
         )
         thread.daemon = True
         thread.start()
