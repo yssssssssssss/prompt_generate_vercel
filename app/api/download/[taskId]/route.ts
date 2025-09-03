@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
+import os from 'os'
 import { taskStatus } from '@/lib/taskStatus'
+
+export const runtime = 'nodejs'
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +30,7 @@ export async function GET(
       return NextResponse.json({ error: 'Excel file not found' }, { status: 404 })
     }
 
-    const filePath = path.join(process.cwd(), 'uploads', excelFile)
+    const filePath = path.join(os.tmpdir(), 'uploads', excelFile)
     
     if (!existsSync(filePath)) {
       return NextResponse.json({ error: 'File does not exist' }, { status: 404 })

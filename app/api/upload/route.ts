@@ -3,8 +3,11 @@ import { v4 as uuidv4 } from 'uuid'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
+import os from 'os'
 import { analyzeImagesAsync } from '@/lib/imageAnalysis'
 import { taskStatus } from '@/lib/taskStatus'
+
+export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +37,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 创建上传目录
-    const uploadDir = path.join(process.cwd(), 'uploads')
+    // 创建上传目录（使用无服务器环境可写目录 /tmp）
+    const uploadDir = path.join(os.tmpdir(), 'uploads')
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }

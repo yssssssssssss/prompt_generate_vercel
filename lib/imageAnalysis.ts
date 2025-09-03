@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
-import { readFile, unlink } from 'fs/promises'
+import { readFile, unlink, mkdir } from 'fs/promises'
 import path from 'path'
+import os from 'os'
 import ExcelJS from 'exceljs'
 
 // 默认分析提示词
@@ -200,8 +201,10 @@ export async function analyzeImagesAsync(
     if (results.length > 0) {
       // 生成Excel文件
       const excelFilename = `analysis_results_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`
-      const excelPath = path.join(process.cwd(), 'uploads', excelFilename)
+      const excelDir = path.join(os.tmpdir(), 'uploads')
+      const excelPath = path.join(excelDir, excelFilename)
 
+      await mkdir(excelDir, { recursive: true })
       await generateExcelFile(results, excelPath)
 
       task.excel_file = excelFilename
