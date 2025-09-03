@@ -1,16 +1,4 @@
 {
   "version": 2,
-  "functions": {
-    "app/api/*/route.ts": {
-      "maxDuration": 300
-    }
-  },
-
-  "regions": ["hkg1"],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ]
+  "regions": ["hkg1"]
 }
