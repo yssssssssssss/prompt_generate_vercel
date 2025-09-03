@@ -4,9 +4,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 import { analyzeImagesAsync } from '@/lib/imageAnalysis'
-
-// 存储任务状态的内存对象
-const taskStatus = new Map<string, any>()
+import { taskStatus } from '@/lib/taskStatus'
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,4 +105,3 @@ export async function POST(request: NextRequest) {
 }
 
 // 导出任务状态供其他API使用
-export { taskStatus }

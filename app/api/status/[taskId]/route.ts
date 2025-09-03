@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { taskStatus } from '../../upload/route'
+import { taskStatus } from '@/lib/taskStatus'
 
 export async function GET(
   request: NextRequest,

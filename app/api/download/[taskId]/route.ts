@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import { taskStatus } from '../../upload/route'
+import { taskStatus } from '@/lib/taskStatus'
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +35,7 @@ export async function GET(
 
     const fileBuffer = await readFile(filePath)
     
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${excelFile}"`,
