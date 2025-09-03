@@ -5,10 +5,7 @@
       "maxDuration": 300
     }
   },
-  "env": {
-    "OPENAI_API_KEY": "@openai_api_key",
-    "OPENAI_API_BASE": "@openai_api_base"
-  },
+
   "regions": ["hkg1"],
   "rewrites": [
     {
