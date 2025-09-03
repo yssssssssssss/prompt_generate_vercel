@@ -1,5 +1,25 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 300
+    }
+  },
+  "env": {
+    "OPENAI_API_KEY": "@openai_api_key",
+    "OPENAI_API_BASE": "@openai_api_base"
+  },
+  "regions": ["hkg1"],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/app" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
   ]
 }
