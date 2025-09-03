@@ -111,8 +111,9 @@ temp/
 tmp/
 
 # API keys and secrets (extra safety)
-**/secrets.json
-**/config.json
-**/*secret*
-**/*key*
-**/*token*
+secrets.json
+config.json
+*.secret
+*.key
+*.token
+.env*
